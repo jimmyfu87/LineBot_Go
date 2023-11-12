@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"LineBot_Go/app/config"
 	"LineBot_Go/app/logger"
 	t "LineBot_Go/app/tools"
 	f "fmt"
@@ -10,6 +11,50 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
+func PushMessageHandler(c *gin.Context) {
+	logger.Info("PushMessageHandler()")
+	// Parse line_id and message from the request
+	lineID := c.PostForm("line_id")
+	message := c.PostForm("message")
+	logger.Info(f.Sprintf("lineID: %s", lineID))
+	logger.Info(f.Sprintf("message: %s", message))
+	// Check if the line_id parameter is missing
+	if lineID == "" {
+		logger.Error("Missing line_id parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing line_id parameter"})
+		return
+	}
+
+	// Initialize Line Bot
+	bot := t.InitBot()
+
+	// Initialize database connection
+	userDao := t.InitDbConn(config.User_table_name)
+
+	// Get user by lineID
+	user, getUserIDErr := userDao.GetUserByLineIDDAO(lineID)
+	if getUserIDErr != nil {
+		logger.Error(f.Sprintf("Unable to retrieve user information: %s", getUserIDErr))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve user information"})
+		return
+	}
+
+	// Create the message to be sent
+	sendingMessage := linebot.NewTextMessage(message)
+
+	// Push the message to the specified line_id
+	userID := user.User_id
+	_, pushErr := bot.PushMessage(userID, sendingMessage).Do()
+	if pushErr != nil {
+		logger.Error(f.Sprintf("Unable to send message: %s", pushErr))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to send message"})
+		return
+	}
+
+	// Return a success message
+	logger.Info(f.Sprintf("Message successfully sent to user with line_id: %s", lineID))
+	c.JSON(http.StatusOK, gin.H{"message": "Message sent successfully"})
+}
 func LineBotWebhookHandler(c *gin.Context) {
 	logger.Info("LineBotWebhookHandler()")
 	// Parse linebot webhook request

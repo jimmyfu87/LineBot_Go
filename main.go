@@ -13,5 +13,6 @@ func main() {
 	r := gin.Default()
 	logger.Info("Web Starts Sucessfully!")
 	r.POST("/callback", cnt.LineBotWebhookHandler)
+	r.POST("/push_message", cnt.PushMessageHandler)
 	r.Run(":" + config.Web_port)
 }
