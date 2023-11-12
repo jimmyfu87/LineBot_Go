@@ -11,6 +11,23 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
+func GetAllMessagesByLineIDHandler(c *gin.Context) {
+	logger.Info("GetAllMessagesByLineIDHandler()")
+	// Get params
+	lineID := c.Param("line_id")
+	logger.Info(f.Sprintf("lineID: %s", lineID))
+	messageDao := t.InitDbConn(config.Message_table_name)
+	// Get all messages
+	messages, err := messageDao.GetAllMessagesByLineIDDAO(lineID)
+	if err != nil {
+		logger.Error(f.Sprintf("Error occurs when GetAllMessagesByLineIDHandler() because %s", err))
+		logger.Error(f.Sprintf("lineID: %s", lineID))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot get user's messages"})
+		return
+	}
+	c.JSON(http.StatusOK, messages)
+}
+
 func PushMessageHandler(c *gin.Context) {
 	logger.Info("PushMessageHandler()")
 	// Parse line_id and message from the request

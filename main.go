@@ -14,5 +14,6 @@ func main() {
 	logger.Info("Web Starts Sucessfully!")
 	r.POST("/callback", cnt.LineBotWebhookHandler)
 	r.POST("/push_message", cnt.PushMessageHandler)
+	r.GET("/get_all_messages/:line_id", cnt.GetAllMessagesByLineIDHandler)
 	r.Run(":" + config.Web_port)
 }
